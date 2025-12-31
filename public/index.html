@@ -243,6 +243,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            flex-shrink: 0; /* Penting untuk mencegah tombol menyusut pada layar kecil */
         }
         
         .copy-btn:hover {
@@ -443,6 +444,182 @@
         <p>© 2025 Deploy to Netlify | Powered by Hanzz xcde</p>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Ambil semua elemen DOM yang dibutuhkan
+            const dropZone = document.getElementById('dropZone');
+            const uploadTrigger = document.getElementById('uploadTrigger');
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileNameDisplay = document.getElementById('fileName');
+            const fileSizeDisplay = document.getElementById('fileSize');
+            const deployBtn = document.getElementById('deployBtn');
+            const siteNameInput = document.getElementById('siteName');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const siteUrlDisplay = document.getElementById('siteUrl');
+            const copyBtn = document.getElementById('copyBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+
+            let selectedFile = null;
+            const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+            // Fungsi utilitas untuk memformat ukuran file
+            const formatFileSize = (bytes) => {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = 2;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            };
+
+            // Fungsi untuk menampilkan/menyembunyikan pesan status
+            const hideAllStatus = () => {
+                loading.classList.remove('show');
+                result.classList.remove('show');
+                errorMessage.classList.remove('show');
+            };
+
+            // 2. Event Listener untuk Tombol Pilih File
+            uploadTrigger.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // 3. Event Listener untuk Input File (ketika file dipilih)
+            fileInput.addEventListener('change', (event) => {
+                handleFileSelection(event.target.files);
+            });
+
+            // 4. Implementasi Drag and Drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Highlighting drop zone saat file masuk
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            // Menangani file saat di-drop
+            dropZone.addEventListener('drop', (event) => {
+                const dt = event.dataTransfer;
+                const files = dt.files;
+                handleFileSelection(files);
+            }, false);
+
+            // 5. Logika Penanganan dan Validasi File
+            const handleFileSelection = (files) => {
+                hideAllStatus();
+                selectedFile = null;
+                deployBtn.disabled = true;
+                fileInfo.classList.remove('show');
+                
+                if (files.length === 0) return;
+
+                const file = files[0];
+                const fileName = file.name;
+                const fileSize = file.size;
+                
+                // Regex yang lebih spesifik untuk ekstensi file yang diizinkan
+                const allowedExtensions = /\.(html|zip|tar\.gz|tar)$/i;
+
+                if (!allowedExtensions.test(fileName)) {
+                    errorText.textContent = 'Format file tidak didukung. Harap upload .html, .zip, .tar.gz, atau .tar.';
+                    errorMessage.classList.add('show');
+                    return;
+                }
+
+                if (fileSize > MAX_FILE_SIZE) {
+                    errorText.textContent = `Ukuran file melebihi batas (Max ${formatFileSize(MAX_FILE_SIZE)}).`;
+                    errorMessage.classList.add('show');
+                    return;
+                }
+
+                // File valid
+                selectedFile = file;
+                fileNameDisplay.textContent = fileName;
+                fileSizeDisplay.textContent = formatFileSize(fileSize);
+                fileInfo.classList.add('show');
+                deployBtn.disabled = false;
+                errorMessage.classList.remove('show');
+            };
+
+            // 6. Logika Simulasi Proses Deploy
+            deployBtn.addEventListener('click', () => {
+                if (!selectedFile) return;
+
+                hideAllStatus();
+                deployBtn.disabled = true;
+                loading.classList.add('show');
+                
+                // Membuat nama situs unik berdasarkan input atau default
+                const customSiteName = siteNameInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+                // Random string 7 karakter
+                const randomId = Math.random().toString(36).substring(2, 9); 
+                const defaultSiteName = 'hanzz-web-deploy-' + randomId;
+                const finalSiteName = customSiteName || defaultSiteName;
+                const deployUrl = `https://${finalSiteName}.netlify.app`;
+
+                // Simulasi proses API call/upload
+                setTimeout(() => {
+                    loading.classList.remove('show');
+                    
+                    // Simulasikan kemungkinan sukses (80%) atau gagal (20%)
+                    const isSuccess = Math.random() < 0.8; 
+
+                    if (isSuccess) {
+                        // Tampilkan hasil sukses
+                        siteUrlDisplay.textContent = deployUrl;
+                        siteUrlDisplay.href = deployUrl;
+                        result.classList.add('show');
+                    } else {
+                        // Tampilkan error
+                        errorText.textContent = 'Deploy gagal. Coba pastikan file Anda valid atau coba lagi nanti.';
+                        errorMessage.classList.add('show');
+                    }
+                    
+                    // Reset status setelah deploy selesai
+                    selectedFile = null;
+                    deployBtn.disabled = true;
+                    fileInfo.classList.remove('show');
+                    fileInput.value = ''; // Reset input file
+                }, 3000); // Simulasi waktu deploy 3 detik
+            });
+
+            // 7. Logika Salin URL
+            copyBtn.addEventListener('click', () => {
+                const urlToCopy = siteUrlDisplay.textContent;
+                navigator.clipboard.writeText(urlToCopy).then(() => {
+                    // Beri feedback singkat
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Disalin!';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Gagal menyalin:', err);
+                    // Beri feedback error
+                    copyBtn.innerHTML = '<i class="fas fa-times"></i> Gagal';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                    }, 1500);
+                });
+            });
+        });
+    </script>
 </body>
 </html>
