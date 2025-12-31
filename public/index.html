@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deploy to Netlify</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .upload-section {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+        
+        .upload-section.dragover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+        }
+        
+        .upload-icon {
+            font-size: 60px;
+            color: #4f46e5;
+            margin-bottom: 20px;
+        }
+        
+        .upload-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        
+        .upload-btn:hover {
+            background: #4338ca;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #eef2ff;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+        
+        .file-name {
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        
+        .file-size {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .deploy-section {
+            margin-top: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .site-name-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .site-name-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+        
+        .deploy-btn {
+            background: linear-gradient(to right, #10b981, #34d399);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+        
+        .deploy-btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        .deploy-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #eef2ff;
+            border-top: 5px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: #f0fdf4;
+            border-radius: 10px;
+            border-left: 5px solid #10b981;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result h3 {
+            color: #10b981;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .url-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #d1fae5;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .url {
+            color: #4f46e5;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        
+        .copy-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .copy-btn:hover {
+            background: #0da271;
+        }
+        
+        .info-box {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .info-box h4 {
+            color: #d97706;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .steps {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .step {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .step-number {
+            background: #4f46e5;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4f46e5;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid #dc2626;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 10px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .steps {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-rocket"></i> Deploy to Netlify</h1>
+            <p class="subtitle">Unggah file HTML atau ZIP project web Anda dan deploy langsung ke Netlify</p>
+        </header>
+        
+        <div class="content">
+            <div class="upload-section" id="dropZone">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3>Upload File Website Anda</h3>
+                <p>Drag & drop file HTML atau ZIP project Anda di sini, atau klik tombol di bawah</p>
+                
+                <button class="upload-btn" id="uploadTrigger">
+                    <i class="fas fa-folder-open"></i> Pilih File
+                </button>
+                
+                <input type="file" id="fileInput" class="file-input" accept=".html,.zip,.tar.gz,.tar">
+                
+                <div class="file-info" id="fileInfo">
+                    <p>File terpilih: <span class="file-name" id="fileName"></span></p>
+                    <p class="file-size" id="fileSize"></p>
+                </div>
+            </div>
+            
+            <div class="deploy-section">
+                <div class="form-group">
+                    <label for="siteName"><i class="fas fa-globe"></i> Nama Website (opsional)</label>
+                    <input type="text" id="siteName" class="site-name-input" placeholder="Nama unik untuk website Anda (otomatis jika kosong)">
+                </div>
+                
+                <button class="deploy-btn" id="deployBtn" disabled>
+                    <i class="fas fa-rocket"></i> Deploy ke Netlify
+                </button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <h3>Sedang mendeploy website Anda...</h3>
+                    <p>Proses ini mungkin memakan waktu beberapa detik</p>
+                </div>
+                
+                <div class="error" id="errorMessage">
+                    <p><i class="fas fa-exclamation-triangle"></i> <span id="errorText">Terjadi kesalahan. Coba lagi.</span></p>
+                </div>
+                
+                <div class="result" id="result">
+                    <h3><i class="fas fa-check-circle"></i> Website Anda sudah online!</h3>
+                    <p>Website Anda telah berhasil dideploy ke Netlify. Anda bisa mengaksesnya melalui URL berikut:</p>
+                    
+                    <div class="url-box">
+                        <a id="siteUrl" class="url" target="_blank" rel="noopener">https://example.netlify.app</a>
+                        <button class="copy-btn" id="copyBtn">
+                            <i class="fas fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    
+                    <p style="margin-top: 15px; font-size: 0.9rem;">
+                        <i class="fas fa-info-circle"></i> Simpan URL ini untuk mengakses website Anda.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4><i class="fas fa-lightbulb"></i> Tips untuk deploy sukses:</h4>
+                <ul style="padding-left: 20px;">
+                    <li>File HTML utama harus bernama <strong>index.html</strong></li>
+                    <li>Jika file Anda dalam format ZIP, pastikan file HTML utama berada di root folder</li>
+                    <li>Ukuran file maksimal yang didukung adalah 10MB (batas yang disarankan untuk fungsi)</li>
+                    <li>Netlify akan otomatis men-generate URL unik untuk website Anda</li>
+                </ul>
+            </div>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Upload File</div>
+                    <p>Upload file HTML atau ZIP project website Anda</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Deploy</div>
+                    <p>Klik tombol deploy untuk mengupload ke Netlify</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Online</div>
+                    <p>Website Anda akan langsung online dengan URL Netlify</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2025 Deploy to Netlify | Powered by Hanzz xcde</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+[build]
+  # File-file statis (HTML, CSS, JS) akan diambil dari folder 'public'
+  publish = "public" 
+  
+  # Kode API rahasia (Fungsi Tanpa Server) akan diambil dari folder 'functions'
+  functions = "functions" 
+
+[functions]
+  # Bundler yang cepat dan modern untuk Netlify Functions
+  node_bundler = "esbuild"
